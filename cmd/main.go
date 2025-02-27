@@ -3,9 +3,20 @@ package main
 import (
 	"fmt"
 	"os"
-	"strings"
 	"time"
+	"wget/cmd/functions"
 )
+
+type ArgValues struct {
+	URL []string
+	Flag string
+	OutputFile string
+	Path string
+	Background bool
+	InputFile string
+	IsMirror bool
+	RateLimit string
+}
 
 func main() {
 	if len(os.Args) < 2 {
@@ -15,15 +26,13 @@ func main() {
 
 	args := os.Args[1:]
 	startTime := time.Now()
-	url := ""
+	// url := ""
 	fmt.Println("Start at:", startTime.Format("2006-01-02 15:04:05"))
 
-	for _, arg := range args {
-		if strings.Contains(arg, "https:") {
-			url = arg
-		}
-	}
+	functions.ParseFlags(args)
 
-	fmt.Println(url)
 
+	fmt.Println("End!")
 }
+
+
