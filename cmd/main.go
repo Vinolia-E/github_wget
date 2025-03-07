@@ -31,6 +31,7 @@ func main() {
 	// fmt.Println(filename)
 
 	fmt.Println("Start at:", startTime.Format("2006-01-02 15:04:05"))
+	fmt.Println("Sending request to:", url)
 	err := DownloadFile(filename, url)
 
 	if err != nil {
