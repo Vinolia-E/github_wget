@@ -5,74 +5,126 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path"
 	"strings"
 	"time"
 )
 
 func main() {
-	if len(os.Args) < 2 {
-		fmt.Println("Invalid number of arguements\nUsage: go run . <URL>")
+	args := os.Args[1:]
+	if len(args) < 1 {
+		fmt.Println("Usage: go run main.go [FLAGS] <URL>")
 		return
 	}
 
-	// flag := ArgValues{}
-	args := os.Args[1:]
-	url := ""
-	filename := ""
-	startTime := time.Now()
-	for _, arg := range args {
-		if strings.HasPrefix(arg, "https://") || strings.HasPrefix(arg, "http://") {
-			argsplit := strings.Split(arg, "/")
-			filename = argsplit[len(argsplit)-1]
-			url = arg
+	// Default values
+	var outputFile, outputDir string
+	background := false
+	var url string
+
+	// Manual argument parsing
+	for i := 0; i < len(args); i++ {
+		if args[i] == "-B" {
+			background = true
+		} else if strings.HasPrefix(args[i], "-O=") {
+			outputFile = strings.TrimPrefix(args[i], "-O=")
+		} else if strings.HasPrefix(args[i], "-P=") {
+			outputDir = strings.TrimPrefix(args[i], "-P=")
+		} else {
+			url = args[i]
 		}
 	}
-	// fmt.Println(url)
-	// fmt.Println(filename)
 
-	fmt.Println("Start at:", startTime.Format("2006-01-02 15:04:05"))
-	fmt.Println("Sending request to:", url)
-	err := DownloadFile(filename, url)
-
-	if err != nil {
-		fmt.Println("Error: ", err)
-	}else {
-		fmt.Println("Download complete!")
+	if url == "" {
+		fmt.Println("Error: No URL provided")
+		return
 	}
 
-	// flag.ParseFlags(args)
+	// Handle background mode
+	if background {
+		fmt.Println("Output will be written to 'wget-log'.")
+		file, err := os.OpenFile("wget-log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			fmt.Println("Error opening log file:", err)
+			return
+		}
+		defer file.Close()
+		os.Stdout = file
+		os.Stderr = file
+	}
 
-	// fmt.Println(args)
-	fmt.Println("End!")
+	// Print start time
+	startTime := time.Now()
+	fmt.Printf("start at %s\n", startTime.Format("2006-01-02 15:04:05"))
+	fmt.Println("sending request, awaiting response...")
+
+	// Send GET request
+	resp, err := http.Get(url)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	// Print response status
+	fmt.Printf("status %s\n", resp.Status)
+	if resp.StatusCode != http.StatusOK {
+		fmt.Println("Download failed: Received status", resp.Status)
+		return
+	}
+
+	// Determine filename
+	filename := path.Base(url)
+	if outputFile != "" {
+		filename = outputFile
+	}
+
+	// Determine file path
+	filepath := filename
+	if outputDir != "" {
+		if err := os.MkdirAll(outputDir, os.ModePerm); err != nil {
+			fmt.Println("Error creating directory:", err)
+			return
+		}
+		filepath = path.Join(outputDir, filename)
+	}
+
+	fmt.Println("saving file to:", filepath)
+
+	// Create the output file
+	outFile, err := os.Create(filepath)
+	if err != nil {
+		fmt.Println("Error creating file:", err)
+		return
+	}
+	defer outFile.Close()
+
+	// Copy data from response to file
+	size, err := io.Copy(outFile, resp.Body)
+	if err != nil {
+		fmt.Println("Error saving file:", err)
+		return
+	}
+
+	// Convert size to appropriate unit (bytes, KB, MB, GB)
+	fileSizeStr := formatSize(size)
+
+	fmt.Printf("Downloaded [%s]\n", url)
+	fmt.Printf("content size: %s\n", fileSizeStr)
+
+	// Print finish time
+	endTime := time.Now()
+	fmt.Printf("finished at %s\n", endTime.Format("2006-01-02 15:04:05"))
 }
 
-func DownloadFile(filename, url string) error {
-	if strings.HasPrefix(url, "http://") || strings.HasPrefix(url, "https://") {
-		return DownloadHTTPFile(filename, url)
+// Converts file size to KB, MB, or GB for readability
+func formatSize(size int64) string {
+	if size < 1024 {
+		return fmt.Sprintf("%d bytes", size)
+	} else if size < 1024*1024 {
+		return fmt.Sprintf("%.2f KB", float64(size)/1024)
+	} else if size < 1024*1024*1024 {
+		return fmt.Sprintf("%.2f MB", float64(size)/(1024*1024))
 	}
-	return fmt.Errorf("unsupported protocol: %s", url)
-}
-
-func DownloadHTTPFile(filename, url string) error {
-	download, err := http.Get(url)
-	if err != nil {
-		return err
-	}
-
-	defer download.Body.Close()
-
-	if download.StatusCode != http.StatusOK {
-		return fmt.Errorf("bad status: %s", download.Status)
-	} else {
-		fmt.Println("status",http.StatusOK, "OK")
-	}
-
-	output, err := os.Create(filename)
-	if err != nil {
-		return err
-	}
-	defer output.Close()
-
-	_, err = io.Copy(output, download.Body)
-	return err
+	return fmt.Sprintf("%.2f GB", float64(size)/(1024*1024*1024))
 }
