@@ -27,8 +27,8 @@ func main() {
 			url = arg
 		}
 	}
-	fmt.Println(url)
-	fmt.Println(filename)
+	// fmt.Println(url)
+	// fmt.Println(filename)
 
 	fmt.Println("Start at:", startTime.Format("2006-01-02 15:04:05"))
 	err := DownloadFile(filename, url)
@@ -62,6 +62,8 @@ func DownloadHTTPFile(filename, url string) error {
 
 	if download.StatusCode != http.StatusOK {
 		return fmt.Errorf("bad status: %s", download.Status)
+	} else {
+		fmt.Println("status",http.StatusOK, "OK")
 	}
 
 	output, err := os.Create(filename)
