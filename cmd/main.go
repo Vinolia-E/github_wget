@@ -21,6 +21,7 @@ func main() {
 	var outputFile, outputDir string
 	background := false
 	var url string
+	// var rateLimit int64 = 0
 
 	// Manual argument parsing
 	for i := 0; i < len(args); i++ {
@@ -59,17 +60,17 @@ func main() {
 	fmt.Println("sending request, awaiting response...")
 
 	// Send GET request
-	resp, err := http.Get(url)
+	response, err := http.Get(url)
 	if err != nil {
 		fmt.Println("Error:", err)
 		return
 	}
-	defer resp.Body.Close()
+	defer response.Body.Close()
 
 	// Print response status
-	fmt.Printf("status %s\n", resp.Status)
-	if resp.StatusCode != http.StatusOK {
-		fmt.Println("Download failed: Received status", resp.Status)
+	fmt.Printf("status %s\n", response.Status)
+	if response.StatusCode != http.StatusOK {
+		fmt.Println("Download failed: Received status", response.Status)
 		return
 	}
 
@@ -100,7 +101,7 @@ func main() {
 	defer outFile.Close()
 
 	// Copy data from response to file
-	size, err := io.Copy(outFile, resp.Body)
+	size, err := io.Copy(outFile, response.Body)
 	if err != nil {
 		fmt.Println("Error saving file:", err)
 		return
