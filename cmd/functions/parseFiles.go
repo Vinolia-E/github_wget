@@ -5,31 +5,31 @@ import (
 	"strings"
 )
 
-func ParseFlags(args []string) {
-	value := ""
+func (input *ArgValues)ParseFlags(args []string) {
 	for _, arg := range args {
 		if arg == "-B" {
-			fmt.Println("-B, output downloaded to the background and redirected to a log file")
+			input.Background = true
+			fmt.Println("Output downloaded to the background and redirected to a log file")
 		} else if strings.HasPrefix(arg, "-O=") {
-			value = arg[len("-O="):]
-			fmt.Println("-0 flag passed")
+			input.OutputFile = arg[len("-O="):]
+			// fmt.Println("-0 flag passed")
 		} else if strings.HasPrefix(arg, "https:/") || strings.HasPrefix(arg, "http:/") {
-			fmt.Println("valid url")
+			input.HasFlag = true
+			input.URL = arg
+			// fmt.Println("valid url")
 		} else if strings.HasPrefix(arg, "-p=") {
-			value = arg[len("-p="):]
-			fmt.Println("Path to save file")
+			input.Path = arg[len("-p="):]
+			// fmt.Println("Path to save file")
 		} else if strings.HasPrefix(arg, "--rate-limit=") {
-			value = arg[len("--rate-limit="):]
-			fmt.Println("download speed limit")
+			input.RateLimit = arg[len("--rate-limit="):]
+			fmt.Printf("download speed limit is : %v", input.RateLimit)
 		} else if arg == "--mirror" {
+			input.IsMirror = true
 			fmt.Println("Instance of mirror")
 		} else if strings.HasPrefix(arg, "-i="){
-			value = arg[len("-i="):]
+			input.InputFile = arg[len("-i="):]
 			fmt.Println("Downlowd different files from a file")
 		}
-		//  else {
-		// 	fmt.Println("undefined arguements yet")
-		// }
-		fmt.Println(value)
+		// fmt.Println("Hello, complete the perse function")
 	}
 }
