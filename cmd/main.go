@@ -41,7 +41,7 @@ func main() {
 	// Print start time
 	startTime := time.Now()
 	fmt.Printf("start at %s\n", startTime.Format("2006-01-02 15:04:05"))
-	fmt.Println("sending request, awaiting response...")
+	fmt.Print("sending request, awaiting response... ")
 
 	// Send GET request
 	// response, err := http.Get(url)
@@ -68,12 +68,14 @@ func main() {
 	// Determine file path
 	filepath := filename
 	if flags.Path != "" {
+		fmt.Println("file path 1 : ", flags.Path)
 		err := os.MkdirAll(flags.Path, 0777)
 		if err != nil {
 			fmt.Println("Error creating directory:", err)
 			return
 		}
 		filepath = path.Join(flags.Path, filename)
+		fmt.Println("file path 7 : ", flags.Path)
 	}
 
 	fmt.Println("saving file to:", filepath)
