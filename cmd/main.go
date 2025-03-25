@@ -78,8 +78,7 @@ func main() {
 		fmt.Println("file path 7 : ", flags.Path)
 	}
 
-	fmt.Println("saving file to:", filepath)
-
+	
 	// Create the output file
 	outFile, err := os.Create(filepath)
 	if err != nil {
@@ -87,19 +86,20 @@ func main() {
 		return
 	}
 	defer outFile.Close()
-
+	
 	// Copy data from response to file
 	size, err := io.Copy(outFile, response.Body)
 	if err != nil {
 		fmt.Println("Error saving file:", err)
 		return
 	}
-
+	
 	// // Convert size to appropriate unit (bytes, KB, MB, GB)
 	fileSizeStr := functions.FormatSize(size)
-
-	fmt.Printf("Downloaded [%s]\n", flags.URL)
+	
 	fmt.Printf("content size: %s\n", fileSizeStr)
+	fmt.Println("saving file to:", filepath)
+	fmt.Printf("Downloaded [%s]\n", flags.URL)
 
 	// Print finish time
 	endTime := time.Now()
