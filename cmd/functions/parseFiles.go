@@ -15,8 +15,8 @@ func (input *ArgValues) ParseFlags(args []string) {
 			// fmt.Println("-0 flag passed")
 		} else if strings.HasPrefix(arg, "https://") || strings.HasPrefix(arg, "http://") || strings.HasPrefix(arg, "ftp://") {
 			input.HasFlag = true
-			input.URL = arg
-			// input.URL = append(input.URL, arg) // arg
+			// input.URL = arg
+			input.URL = append(input.URL, arg) // arg
 			// fmt.Println("valid url")
 		} else if strings.HasPrefix(arg, "-P=") {
 			input.Path = arg[len("-P="):]
@@ -35,7 +35,7 @@ func (input *ArgValues) ParseFlags(args []string) {
 			fmt.Println("Instance of mirror")
 		} else if strings.HasPrefix(arg, "-i=") {
 			input.InputFile = arg[len("-i="):]
-			fmt.Println("Downlowd different files from a file")
+			fmt.Println("Download different files from a file")
 		}
 	}
 }
