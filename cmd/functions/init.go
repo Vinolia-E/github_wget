@@ -1,7 +1,7 @@
 package functions
 
 type ArgValues struct {
-	URL []string
+	URL string
 	Flag string
 	OutputFile string
 	Path string
