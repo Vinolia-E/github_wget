@@ -7,6 +7,7 @@ import (
 	"os"
 	"path"
 	"regexp"
+	"strings"
 	"sync"
 	"time"
 
@@ -20,109 +21,111 @@ func main() {
 	}
 	args := os.Args[1:]
 
+	flags := &functions.ArgValues{}
+	flags.ParseFlags(args)
+
+	// if flags.URL == nil {
+	if flags.URL == "" {
+		fmt.Println("Error: No URL provided")
+		return
+	}
+
+	// Handle background mode
+	if flags.Background {
+		// functions.BackgroundMode()
+
+		fmt.Println("Output will be written to 'wget-log'.")
+		file, err := os.OpenFile("wget-log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+		if err != nil {
+			fmt.Println("Error opening log file:", err)
+			return
+		}
+		defer file.Close()
+		os.Stdout = file
+		os.Stderr = file
+	}
+
 	// Print start time
 	startTime := time.Now()
 	fmt.Printf("start at %s\n", startTime.Format("2006-01-02 15:04:05"))
 	fmt.Print("sending request, awaiting response... ")
 
-	flags := &functions.ArgValues{}
-	flags.ParseFlags(args)
+	// StartDownloads(args, flags.URL, flags.Path)
+	// Send GET request
 
-	if flags.URL == nil {
-		fmt.Println("Error: No URL provided")
+	// for _, url := range flags.URL {
+	response, err := http.Get(flags.URL)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+	defer response.Body.Close()
+
+	// Print response status
+	fmt.Printf("status %s\n", response.Status)
+	if response.StatusCode != http.StatusOK {
+		fmt.Println("Download failed: Received status", response.Status)
 		return
 	}
 
-	// // Handle background modeg
-	if flags.Background {
-		EnableBackgroundMode()
-		// fmt.Println("Output will be written to 'wget-log'.")
-		// file, err := os.OpenFile("wget-log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
-		// if err != nil {
-		// 	fmt.Println("Error opening log file:", err)
-		// 	return
-		// }
-		// defer file.Close()
-		// os.Stdout = file
-		// os.Stderr = file
+	filename := path.Base(flags.URL)
+	if flags.OutputFile != "" {
+		filename = flags.OutputFile
 	}
 
-	StartDownloads(args, flags.URL, flags.Path)
-	// Send GET request
-	// response, err := http.Get(url)
-	// fmt.Println("\nTHE URLS ARE: \n\n", flags.URL, "\n\n")
-	// for _, url := range flags.URL {
-	// 	response, err := http.Get(url)
-	// 	if err != nil {
-	// 		fmt.Println("Error:", err)
-	// 		return
-	// 	}
-	// 	defer response.Body.Close()
+	// Determine file path
+	filepath := filename
+	if flags.Path != "" {
+		// fmt.Println("file path 1 : ", flags.Path)
+		if strings.HasPrefix(flags.Path, "~/") {
+			homeDir, err := os.UserHomeDir()
+			if err != nil {
+				fmt.Println("Error getting home directory:", err)
+			return 
+			}
+			filepath = path.Join(homeDir, flags.Path[2:], filename)
+			// fmt.Println("file path is : ", filepath)
+			// return
+		} else {
 
-	// 	// Print response status
-	// 	fmt.Printf("status %s\n", response.Status)
-	// 	if response.StatusCode != http.StatusOK {
-	// 		fmt.Println("Download failed: Received status", response.Status)
-	// 		return
-	// 	}
+			err := os.MkdirAll(flags.Path, 0o777)
+			if err != nil {
+				fmt.Println("Error creating directory:", err)
+				return
+			}
+			filepath = path.Join(flags.Path, filename)
+		}
+		fmt.Println("file path is : ", filepath)
+	}
 
-	// 	filename := path.Base(url)
-	// 	if flags.OutputFile != "" {
-	// 		filename = flags.OutputFile
-	// 	}
+	// Create the output file
+	outFile, err := os.Create(filepath)
+	if err != nil {
+		fmt.Println("Error creating file:", err)
+		return
+	}
+	defer outFile.Close()
 
-	// 	// Determine file path
-	// 	filepath := filename
-	// 	if flags.Path != "" {
-	// 		fmt.Println("file path 1 : ", flags.Path)
-	// 		err := os.MkdirAll(flags.Path, 0o777)
-	// 		if err != nil {
-	// 			fmt.Println("Error creating directory:", err)
-	// 			return
-	// 		}
-	// 		filepath = path.Join(flags.Path, filename)
-	// 		fmt.Println("file path is : ", flags.Path)
-	// 	}
+	// Copy data from response to file
+	size, err := io.Copy(outFile, response.Body)
+	if err != nil {
+		fmt.Println("Error saving file:", err)
+		return
+	}
 
-	// 	// Create the output file
-	// 	outFile, err := os.Create(filepath)
-	// 	if err != nil {
-	// 		fmt.Println("Error creating file:", err)
-	// 		return
-	// 	}
-	// 	defer outFile.Close()
+	// // Convert size to appropriate unit (bytes, KB, MB, GB)
+	fileSizeStr := functions.FormatSize(size)
 
-	// 	// Copy data from response to file
-	// 	size, err := io.Copy(outFile, response.Body)
-	// 	if err != nil {
-	// 		fmt.Println("Error saving file:", err)
-	// 		return
-	// 	}
+	fmt.Printf("content size: %s\n", fileSizeStr)
+	fmt.Println("saving file to:", filepath)
+	fmt.Printf("Downloaded [%s]\n", flags.URL)
 
-	// 	// // Convert size to appropriate unit (bytes, KB, MB, GB)
-	// 	fileSizeStr := functions.FormatSize(size)
-
-	// 	fmt.Printf("content size: %s\n", fileSizeStr)
-	// 	fmt.Println("saving file to:", filepath)
-	// 	fmt.Printf("Downloaded [%s]\n", flags.URL)
-
-	// 	// Print finish time
-	// 	endTime := time.Now()
-	// 	fmt.Printf("finished at %s\n", endTime.Format("2006-01-02 15:04:05"))
+	// Print finish time
+	endTime := time.Now()
+	fmt.Printf("finished at %s\n", endTime.Format("2006-01-02 15:04:05"))
 	// }
 }
 
-func EnableBackgroundMode() {
-	fmt.Println("Output will be written to 'wget-log'.")
-	file, err := os.OpenFile("wget-log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
-	if err != nil {
-		fmt.Println("Error opening log file:", err)
-		return
-	}
-	defer file.Close()
-	os.Stdout = file
-	os.Stderr = file
-}
 
 func StartDownloads(args, urls []string, outputDir string) {
 
