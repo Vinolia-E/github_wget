@@ -25,9 +25,17 @@ func main() {
 	flags.ParseFlags(args)
 
 	// if flags.URL == nil {
-	if flags.URL == "" {
+	if flags.URL == nil && flags.InputFile == "" {
 		fmt.Println("Error: No URL provided")
 		return
+	}
+
+	if flags.InputFile != "" {
+		inputs := functions.ReadInputFile(flags.InputFile)
+		fmt.Println(inputs)
+
+		// flags.URL = url
+		flags.URL = append(flags.URL, inputs...)
 	}
 
 	// Handle background mode
@@ -53,79 +61,79 @@ func main() {
 	// StartDownloads(args, flags.URL, flags.Path)
 	// Send GET request
 
-	// for _, url := range flags.URL {
-	response, err := http.Get(flags.URL)
-	if err != nil {
-		fmt.Println("Error:", err)
-		return
-	}
-	defer response.Body.Close()
-
-	// Print response status
-	fmt.Printf("status %s\n", response.Status)
-	if response.StatusCode != http.StatusOK {
-		fmt.Println("Download failed: Received status", response.Status)
-		return
-	}
-
-	filename := path.Base(flags.URL)
-	if flags.OutputFile != "" {
-		filename = flags.OutputFile
-	}
-
-	// Determine file path
-	filepath := filename
-	if flags.Path != "" {
-		// fmt.Println("file path 1 : ", flags.Path)
-		if strings.HasPrefix(flags.Path, "~/") {
-			homeDir, err := os.UserHomeDir()
-			if err != nil {
-				fmt.Println("Error getting home directory:", err)
-			return 
-			}
-			filepath = path.Join(homeDir, flags.Path[2:], filename)
-			// fmt.Println("file path is : ", filepath)
-			// return
-		} else {
-
-			err := os.MkdirAll(flags.Path, 0o777)
-			if err != nil {
-				fmt.Println("Error creating directory:", err)
-				return
-			}
-			filepath = path.Join(flags.Path, filename)
+	for _, url := range flags.URL {
+		fmt.Println("THIS IS THE URL", url)
+		response, err := http.Get(url) //(flags.URL)
+		if err != nil {
+			fmt.Println("Error:", err)
+			return
 		}
-		fmt.Println("file path is : ", filepath)
+		defer response.Body.Close()
+
+		// Print response status
+		fmt.Printf("status %s\n", response.Status)
+		if response.StatusCode != http.StatusOK {
+			fmt.Println("Download failed: Received status", response.Status)
+			return
+		}
+
+		filename := path.Base(url) //(flags.URL)
+		if flags.OutputFile != "" {
+			filename = flags.OutputFile
+		}
+
+		// Determine file path
+		filepath := filename
+		if flags.Path != "" {
+			// fmt.Println("file path 1 : ", flags.Path)
+			if strings.HasPrefix(flags.Path, "~/") {
+				homeDir, err := os.UserHomeDir()
+				if err != nil {
+					fmt.Println("Error getting home directory:", err)
+					return
+				}
+				filepath = path.Join(homeDir, flags.Path[2:], filename)
+				// fmt.Println("file path is : ", filepath)
+				// return
+			} else {
+
+				err := os.MkdirAll(flags.Path, 0o777)
+				if err != nil {
+					fmt.Println("Error creating directory:", err)
+					return
+				}
+				filepath = path.Join(flags.Path, filename)
+			}
+			// fmt.Println("file path is : ", filepath)
+		}
+
+		// Create the output file
+		outFile, err := os.Create(filepath)
+		if err != nil {
+			fmt.Println("Error creating file:", err)
+			return
+		}
+		defer outFile.Close()
+
+		// Copy data from response to file
+		size, err := io.Copy(outFile, response.Body)
+		if err != nil {
+			fmt.Println("Error saving file:", err)
+			return
+		}
+
+		// // Convert size to appropriate unit (bytes, KB, MB, GB)
+		fileSizeStr := functions.FormatSize(size)
+
+		fmt.Printf("content size: %s\n", fileSizeStr)
+		fmt.Println("saving file to:", filepath)
+		fmt.Printf("Downloaded %s\n", flags.URL)
+
+		// Print finish time
+		endTime := time.Now()
+		fmt.Printf("finished at %s\n", endTime.Format("2006-01-02 15:04:05"))
 	}
-
-	// Create the output file
-	outFile, err := os.Create(filepath)
-	if err != nil {
-		fmt.Println("Error creating file:", err)
-		return
-	}
-	defer outFile.Close()
-
-	// Copy data from response to file
-	size, err := io.Copy(outFile, response.Body)
-	if err != nil {
-		fmt.Println("Error saving file:", err)
-		return
-	}
-
-	// // Convert size to appropriate unit (bytes, KB, MB, GB)
-	fileSizeStr := functions.FormatSize(size)
-
-	fmt.Printf("content size: %s\n", fileSizeStr)
-	fmt.Println("saving file to:", filepath)
-	fmt.Printf("Downloaded [%s]\n", flags.URL)
-
-	// Print finish time
-	endTime := time.Now()
-	fmt.Printf("finished at %s\n", endTime.Format("2006-01-02 15:04:05"))
-	// }
 }
-
 
 func StartDownloads(args, urls []string, outputDir string) {
 
