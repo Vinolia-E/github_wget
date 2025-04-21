@@ -19,6 +19,10 @@ func main() {
 		return
 	}
 	args := os.Args[1:]
+	// Print start time
+	startTime := time.Now()
+	fmt.Printf("start at %s\n", startTime.Format("2006-01-02 15:04:05"))
+	fmt.Print("sending request, awaiting response... ")
 
 	flags := &functions.ArgValues{}
 	flags.ParseFlags(args)
@@ -28,13 +32,13 @@ func main() {
 		return
 	}
 
-	if flags.InputFile != "" {
+	if flags.InputFile != "" && flags.IsMirror == false{
 		inputs := functions.ReadInputFile(flags.InputFile)
 		flags.URL = append(flags.URL, inputs...)
 	}
 
 	// Handle background mode
-	if flags.Background {
+	if flags.Background && flags.IsMirror == false{
 		fmt.Println("Output will be written to 'wget-log'.")
 		file, err := os.OpenFile("wget-log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 		if err != nil {
@@ -45,11 +49,6 @@ func main() {
 		os.Stdout = file
 		os.Stderr = file
 	}
-
-	// Print start time
-	startTime := time.Now()
-	fmt.Printf("start at %s\n", startTime.Format("2006-01-02 15:04:05"))
-	fmt.Print("sending request, awaiting response... \n")
 
 	// Use a WaitGroup for async downloads
 	var wg sync.WaitGroup
@@ -63,6 +62,11 @@ func main() {
 	}
 
 	wg.Wait() // Wait for all downloads to finish
+
+	if flags.IsMirror {
+		functions.MirrorWebsite(flags.URL[0], "./mirrored")
+		return
+	}
 }
 
 // Function to handle file downloading
@@ -133,3 +137,4 @@ func DownloadFile(url string, flags *functions.ArgValues) {
 	endTime := time.Now()
 	fmt.Printf("finished at %s\n", endTime.Format("2006-01-02 15:04:05"))
 }
+
