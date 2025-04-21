@@ -11,3 +11,12 @@ type ArgValues struct {
 	RateLimit string
 	HasFlag bool
 }
+
+type MirrorValues struct {
+	Convert bool
+	Exclude bool
+	Reject bool
+	Rejected []string
+	Excluded []string
+	ConvertPath string
+}
