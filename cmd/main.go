@@ -2,12 +2,7 @@ package main
 
 import (
 	"fmt"
-	"io"
-	"net/http"
 	"os"
-	"path"
-	"strings"
-	"sync"
 	"time"
 
 	"wget/cmd/functions"
@@ -19,6 +14,7 @@ func main() {
 		return
 	}
 	args := os.Args[1:]
+
 	// Print start time
 	startTime := time.Now()
 	fmt.Printf("start at %s\n", startTime.Format("2006-01-02 15:04:05"))
@@ -27,18 +23,18 @@ func main() {
 	flags := &functions.ArgValues{}
 	flags.ParseFlags(args)
 
-	if flags.URL == nil && flags.InputFile == "" {
+	if flags.URL == nil {
 		fmt.Println("Error: No URL provided")
 		return
 	}
 
-	if flags.InputFile != "" && flags.IsMirror == false{
-		inputs := functions.ReadInputFile(flags.InputFile)
-		flags.URL = append(flags.URL, inputs...)
-	}
+	// if flags.InputFile != "" && !flags.IsMirror {
+	// 	inputs := functions.ReadInputFile(flags.InputFile)
+	// 	flags.URL = append(flags.URL, inputs...)
+	// }
 
 	// Handle background mode
-	if flags.Background && flags.IsMirror == false{
+	if flags.Background {
 		fmt.Println("Output will be written to 'wget-log'.")
 		file, err := os.OpenFile("wget-log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 		if err != nil {
@@ -49,92 +45,27 @@ func main() {
 		os.Stdout = file
 		os.Stderr = file
 	}
-
-	// Use a WaitGroup for async downloads
-	var wg sync.WaitGroup
-
 	for _, url := range flags.URL {
-		wg.Add(1)
-		go func(url string) { // Run each download in a goroutine
-			defer wg.Done()
-			DownloadFile(url, flags)
-		}(url)
-	}
-
-	wg.Wait() // Wait for all downloads to finish
-
-	if flags.IsMirror {
-		functions.MirrorWebsite(flags.URL[0], "./mirrored")
-		return
-	}
-}
-
-// Function to handle file downloading
-func DownloadFile(url string, flags *functions.ArgValues) {
-	// fmt.Println("THIS IS THE URL", url)
-	response, err := http.Get(url)
-	if err != nil {
-		fmt.Println("Error:", err)
-		return
-	}
-	defer response.Body.Close()
-
-	// Print response status
-	fmt.Printf("status %s\n", response.Status)
-	if response.StatusCode != http.StatusOK {
-		fmt.Println("Download failed: Received status", response.Status)
-		return
-	}
-
-	filename := path.Base(url)
-	if flags.OutputFile != "" {
-		filename = flags.OutputFile
-	}
-
-	// Determine file path
-	filepath := filename
-	if flags.Path != "" {
-		if strings.HasPrefix(flags.Path, "~/") {
-			homeDir, err := os.UserHomeDir()
-			if err != nil {
-				fmt.Println("Error getting home directory:", err)
-				return
-			}
-			filepath = path.Join(homeDir, flags.Path[2:], filename)
-		} else {
-			err := os.MkdirAll(flags.Path, 0o777)
-			if err != nil {
-				fmt.Println("Error creating directory:", err)
-				return
-			}
-			filepath = path.Join(flags.Path, filename)
+		if !flags.IsMirror {
+			functions.DownloadFile(url, flags)
 		}
 	}
 
-	// Create the output file
-	outFile, err := os.Create(filepath)
-	if err != nil {
-		fmt.Println("Error creating file:", err)
+	// // Use a WaitGroup for async downloads
+	// var wg sync.WaitGroup
+
+	// for _, url := range flags.URL {
+	// 	wg.Add(1)
+	// 	go func(url string) { // Run each download in a goroutine
+	// 		defer wg.Done()
+	// 		functions.DownloadFile(url, flags)
+	// 	}(url)
+	// }
+
+	// wg.Wait() // Wait for all downloads to finish
+
+	if flags.IsMirror {
+		fmt.Println("Mirroring website... to be done")
 		return
 	}
-	defer outFile.Close()
-
-	// Copy data from response to file
-	size, err := io.Copy(outFile, response.Body)
-	if err != nil {
-		fmt.Println("Error saving file:", err)
-		return
-	}
-
-	// Convert size to appropriate unit
-	fileSizeStr := functions.FormatSize(size)
-
-	fmt.Printf("content size: %s\n", fileSizeStr)
-	fmt.Println("saving file to:", filepath)
-	fmt.Printf("Downloaded %s\n", url)
-
-	// Print finish time
-	endTime := time.Now()
-	fmt.Printf("finished at %s\n", endTime.Format("2006-01-02 15:04:05"))
 }
-
