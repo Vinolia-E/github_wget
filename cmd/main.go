@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"sync"
 	"time"
 
 	"wget/cmd/functions"
@@ -23,15 +24,15 @@ func main() {
 	flags := &functions.ArgValues{}
 	flags.ParseFlags(args)
 
-	if flags.URL == nil {
+	if flags.URL == nil && flags.InputFile == "" {
 		fmt.Println("Error: No URL provided")
 		return
 	}
 
-	// if flags.InputFile != "" && !flags.IsMirror {
-	// 	inputs := functions.ReadInputFile(flags.InputFile)
-	// 	flags.URL = append(flags.URL, inputs...)
-	// }
+	if flags.InputFile != "" && !flags.IsMirror {
+		inputs := functions.ReadInputFile(flags.InputFile)
+		flags.URL = append(flags.URL, inputs...)
+	}
 
 	// Handle background mode
 	if flags.Background {
@@ -45,24 +46,19 @@ func main() {
 		os.Stdout = file
 		os.Stderr = file
 	}
+
+	// Use a WaitGroup for async downloads
+	var wg sync.WaitGroup
+
 	for _, url := range flags.URL {
-		if !flags.IsMirror {
+		wg.Add(1)
+		go func(url string) { // Run each download in a goroutine
+			defer wg.Done()
 			functions.DownloadFile(url, flags)
-		}
+		}(url)
 	}
 
-	// // Use a WaitGroup for async downloads
-	// var wg sync.WaitGroup
-
-	// for _, url := range flags.URL {
-	// 	wg.Add(1)
-	// 	go func(url string) { // Run each download in a goroutine
-	// 		defer wg.Done()
-	// 		functions.DownloadFile(url, flags)
-	// 	}(url)
-	// }
-
-	// wg.Wait() // Wait for all downloads to finish
+	wg.Wait() // Wait for all downloads to finish
 
 	if flags.IsMirror {
 		fmt.Println("Mirroring website... to be done")
