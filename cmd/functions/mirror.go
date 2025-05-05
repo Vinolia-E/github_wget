@@ -13,7 +13,7 @@ import (
 )
 
 func MirrorWebsite(urlInput string) {
-	domainName := "Example"
+	domainName := ""
 	response, err := http.Get(urlInput)
 	if err != nil {
 		fmt.Println("Error fetching URL:", err)
