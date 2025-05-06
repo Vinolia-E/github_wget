@@ -60,8 +60,4 @@ func main() {
 
 	wg.Wait() // Wait for all downloads to finish
 
-	if flags.IsMirror {
-		fmt.Println("Mirroring website... to be done")
-		return
-	}
 }
