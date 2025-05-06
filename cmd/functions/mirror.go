@@ -13,7 +13,6 @@ import (
 )
 
 func MirrorWebsite(urlInput string) {
-	domainName := ""
 	response, err := http.Get(urlInput)
 	if err != nil {
 		fmt.Println("Error fetching URL:", err)
@@ -29,7 +28,7 @@ func MirrorWebsite(urlInput string) {
 	}
 
 	parsedUrl, _ := url.Parse(urlInput)
-	domainName = parsedUrl.Hostname()
+	domainName := parsedUrl.Hostname()
 
 	// Extracting links
 	resourses := []string{}
@@ -52,9 +51,8 @@ func MirrorWebsite(urlInput string) {
 
 	for _, resource := range resourses {
 		if strings.HasPrefix(resource, "https://") && strings.Contains(resource, "https://") {
-			// fmt.Println("Extracted links / Found resources: \n")
-			// fmt.Println("Domain name: ", resource[len("https://"):], "\n")
-			domainName = resource[len("https://"):]
+			domainSplit := strings.Split(resource[len("https://"):], "/")
+			domainName = domainSplit[0]
 		}
 	}
 	// Make a directory for the domain using the domain name
@@ -66,6 +64,7 @@ func MirrorWebsite(urlInput string) {
 	// Save the HTML file
 	htmlFilePath := path.Join(domainName, "index.html")
 	outFile, err := os.Create(htmlFilePath)
+	// outFile, err := os.Create(domainName)
 	if err != nil {
 		fmt.Println("Failed to save HTML file:", err)
 		return
