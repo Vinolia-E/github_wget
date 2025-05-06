@@ -25,7 +25,9 @@ func DownloadFile(url string, flags *ArgValues) {
 		return
 	}
 	if flags.IsMirror {
-		fmt.Println("Skipping download for mirror mode")
+		// fmt.Println("Skipping download for mirror mode")
+		MirrorWebsite(url)
+		fmt.Println("Mirror mode  implementation trial. Debug in download.go")
 		return
 	}
 
