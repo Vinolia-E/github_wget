@@ -36,15 +36,10 @@ func main() {
 
 	// Handle background mode
 	if flags.Background {
-		fmt.Println("Output will be written to 'wget-log'.")
-		file, err := os.OpenFile("wget-log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
-		if err != nil {
-			fmt.Println("Error opening log file:", err)
-			return
+		output := functions.BackgroundDownload()
+		if output != nil {
+			defer output.Close()
 		}
-		defer file.Close()
-		os.Stdout = file
-		os.Stderr = file
 	}
 
 	// Use a WaitGroup for async downloads
@@ -59,5 +54,6 @@ func main() {
 	}
 
 	wg.Wait() // Wait for all downloads to finish
-
 }
+
+
