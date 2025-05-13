@@ -7,6 +7,8 @@ import (
 	"os"
 	"path"
 	"time"
+
+	"golang.org/x/net/html"
 )
 
 func MirrorWeb(url string) {
@@ -18,6 +20,39 @@ func MirrorWeb(url string) {
 	}
 
 	defer response.Body.Close()
+
+	/**/
+	docinfo, err := html.Parse(response.Body)
+	if err != nil {
+		fmt.Println("Failed to parse HTML:", err)
+		return
+	}
+
+	// Extracting links
+	resourses := []string{}
+	count := 1
+	var walker func(*html.Node)
+
+	walker = func(n *html.Node) {
+		if n.Type == html.ElementNode {
+			for _, attr := range n.Attr {
+				if (n.Data == "a" || n.Data == "link") && attr.Key == "href" || attr.Key == "src" {
+					resourses = append(resourses, attr.Val)
+				}
+			}
+		}
+
+		for c := n.FirstChild; c != nil; c = c.NextSibling {
+			walker(c)
+		}
+	}
+	walker(docinfo)
+
+	for _, resource := range resourses {
+		fmt.Println("Resource from html:", count, " :", resource)
+		count++
+	}
+	/**/
 
 	// Print response status
 	fmt.Printf("status %s\n", response.Status)
@@ -52,6 +87,10 @@ func MirrorWeb(url string) {
 		return
 	}
 	fileSizeStr := FormatSize(data)
+
+	/*
+
+	 */
 
 	fmt.Printf("content size: %s\n", fileSizeStr)
 	fmt.Println("saving file to:", filepath)
