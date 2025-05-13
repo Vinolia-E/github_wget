@@ -35,7 +35,8 @@ func MirrorWeb(url string) {
 		return
 	}
 	fmt.Println("folder name:", foldername)
-	filepath := path.Join(foldername, filename)
+	filepath := path.Join(foldername, "index.html")
+	// filepath := path.Join(foldername, filename)
 
 	output, err := os.Create(filepath)
 	if err != nil {
