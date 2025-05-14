@@ -149,7 +149,8 @@ func DownloadFile2(url string, flags *ArgValues) {
 				fmt.Println("Error creating directory:", err)
 				return
 			}
-			filepath = path.Join(flags.Path, filename)
+			filepath = path.Join(flags.Path, "index.html")
+			// filepath = path.Join(flags.Path, filename)
 		}
 	} else {
 		fmt.Println("File path should not be applied when mirroring a website")
