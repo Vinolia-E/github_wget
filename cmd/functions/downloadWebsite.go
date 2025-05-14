@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"strings"
 	"time"
 
 	"golang.org/x/net/html"
@@ -36,8 +37,20 @@ func MirrorWeb(url string) {
 	walker = func(n *html.Node) {
 		if n.Type == html.ElementNode {
 			for _, attr := range n.Attr {
-				if (n.Data == "a" || n.Data == "link") && attr.Key == "href" || attr.Key == "src" {
-					resourses = append(resourses, attr.Val)
+				if (n.Data == "a" || n.Data == "link" || n.Data == "img") && (attr.Key == "href" || attr.Key == "src") {
+					resourse := n.Data + " : " + attr.Key + " : " + attr.Val
+					exist := false
+
+					for _, rs := range resourses {
+						if rs == resourse {
+							exist = true
+							break
+						}
+					}
+
+					if !exist {
+						resourses = append(resourses, resourse)
+					}
 				}
 			}
 		}
@@ -70,7 +83,7 @@ func MirrorWeb(url string) {
 		return
 	}
 	fmt.Println("folder name:", foldername)
-	filepath := path.Join(foldername, "index.html")
+	filepath := path.Join(foldername, filename)
 	// filepath := path.Join(foldername, filename)
 
 	output, err := os.Create(filepath)
@@ -95,6 +108,76 @@ func MirrorWeb(url string) {
 	fmt.Printf("content size: %s\n", fileSizeStr)
 	fmt.Println("saving file to:", filepath)
 	fmt.Printf("Downloaded %s\n", url)
+	// Print finish time
+	endTime := time.Now()
+	fmt.Printf("finished at %s\n", endTime.Format("2006-01-02 15:04:05"))
+}
+
+func DownloadFile2(url string, flags *ArgValues) {
+	response, err := http.Get(url)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+	defer response.Body.Close()
+
+	// Print response status
+	fmt.Printf("status %s\n", response.Status)
+	if response.StatusCode != http.StatusOK {
+		fmt.Println("Download failed: Received status", response.Status)
+		return
+	}
+	filename := path.Base(url)
+	// if flags.OutputFile != "" {
+	// 	filename = flags.OutputFile
+	// }
+
+	// Determine file path
+	filepath := filename
+	if flags.Path == "" {
+		flags.Path = filename
+		if strings.HasPrefix(flags.Path, "~/") {
+			homeDir, err := os.UserHomeDir()
+			if err != nil {
+				fmt.Println("Error getting home directory:", err)
+				return
+			}
+			filepath = path.Join(homeDir, flags.Path[2:], filename)
+		} else {
+			err := os.MkdirAll(flags.Path, 0o777)
+			if err != nil {
+				fmt.Println("Error creating directory:", err)
+				return
+			}
+			filepath = path.Join(flags.Path, filename)
+		}
+	} else {
+		fmt.Println("File path should not be applied when mirroring a website")
+		return
+	}
+
+	// Create the output file
+	outFile, err := os.Create(filepath)
+	if err != nil {
+		fmt.Println("Error creating file:", err)
+		return
+	}
+	defer outFile.Close()
+
+	// Copy data from response to file
+	size, err := io.Copy(outFile, response.Body)
+	if err != nil {
+		fmt.Println("Error saving file:", err)
+		return
+	}
+
+	// Convert size to appropriate unit
+	fileSizeStr := FormatSize(size)
+
+	fmt.Printf("content size: %s\n", fileSizeStr)
+	fmt.Println("saving file to:", filepath)
+	fmt.Printf("Downloaded %s\n", url)
+
 	// Print finish time
 	endTime := time.Now()
 	fmt.Printf("finished at %s\n", endTime.Format("2006-01-02 15:04:05"))
