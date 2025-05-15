@@ -13,59 +13,56 @@ import (
 )
 
 func MirrorWeb(url string) {
-	// filepath := ""
 	response, err := http.Get(url)
 	if err != nil {
 		fmt.Println("Error getting the URL:", err)
 		return
 	}
-
+	
 	defer response.Body.Close()
-
+	
 	/**/
 	docinfo, err := html.Parse(response.Body)
 	if err != nil {
 		fmt.Println("Failed to parse HTML:", err)
 		return
 	}
-
+	
 	// Extracting links
 	resourses := []string{}
-	count := 1
-	var walker func(*html.Node)
 
+	var walker func(*html.Node)
+	
 	walker = func(n *html.Node) {
 		if n.Type == html.ElementNode {
 			for _, attr := range n.Attr {
 				if (n.Data == "a" || n.Data == "link" || n.Data == "img") && (attr.Key == "href" || attr.Key == "src") {
-					resourse := n.Data + " : " + attr.Key + " : " + attr.Val
+					resourse := n.Data + " " + attr.Key + " " + attr.Val
 					exist := false
-
+					
 					for _, rs := range resourses {
 						if rs == resourse {
 							exist = true
 							break
 						}
 					}
-
+					
 					if !exist {
 						resourses = append(resourses, resourse)
 					}
 				}
 			}
 		}
-
+		
 		for c := n.FirstChild; c != nil; c = c.NextSibling {
 			walker(c)
 		}
 	}
-	walker(docinfo)
+	
+	filepaths := []string{}
+	subfiles := ""
 
-	for _, resource := range resourses {
-		fmt.Println("Resource from html:", count, " :", resource)
-		count++
-	}
-	/**/
+	walker(docinfo)
 
 	// Print response status
 	fmt.Printf("status %s\n", response.Status)
@@ -74,17 +71,16 @@ func MirrorWeb(url string) {
 		return
 	}
 
-	filename := path.Base(url)
-	foldername := filename
+	foldername := path.Base(url)
+	filename := "index.html"
 
 	er := os.MkdirAll(foldername, 0o755)
 	if er != nil {
 		fmt.Println("Error creating directory:", err)
 		return
 	}
-	fmt.Println("folder name:", foldername)
+	// fmt.Println("folder name:", foldername)
 	filepath := path.Join(foldername, filename)
-	// filepath := path.Join(foldername, filename)
 
 	output, err := os.Create(filepath)
 	if err != nil {
@@ -99,6 +95,54 @@ func MirrorWeb(url string) {
 		fmt.Println("Error saving file:", err)
 		return
 	}
+
+	for _, resource := range resourses {
+	
+
+		if !strings.HasSuffix(resource, ".css") && !strings.HasPrefix(resource, "img") {//!strings.HasSuffix(resource, ".jpg") && !strings.HasSuffix(resource, ".png") && !strings.HasSuffix(resource, ".jpeg") || strings.Contains(resource, "%") {
+			continue
+		
+		} else {
+			fmt.Println("Resource: ", resource)
+
+			getLink := strings.Split(resource, " ")
+			resp, err := http.Get(getLink[2])
+			if err != nil {
+				fmt.Println("Error getting the URL:", err)
+				return
+			}
+
+			defer resp.Body.Close()
+
+			subfiles = path.Base(resource)
+			filepaths = append(filepaths, subfiles)
+
+			filepath = path.Join(foldername, subfiles)
+			output, err := os.Create(filepath)
+			if err != nil {
+				fmt.Println("Error creating file:", err)
+				return
+			}
+			defer output.Close()
+
+			// Copy data from response to file
+		data, err := io.Copy(output, resp.Body)
+		if err != nil {
+			fmt.Println("Error saving file:", err)
+			return
+		}
+
+		// Extract file name for each image and css
+
+		// fmt.Println("filePaths: ", filepaths)
+		fmt.Println("subfiles: ", subfiles)
+		// fmt.Println("Data: ", data)
+		fileSizeStr := FormatSize(data)
+		fmt.Printf("content size: %s\n", fileSizeStr)
+	fmt.Println("saving file to:", filepath)
+		}	
+	}
+
 	fileSizeStr := FormatSize(data)
 
 	/*
@@ -113,7 +157,10 @@ func MirrorWeb(url string) {
 	fmt.Printf("finished at %s\n", endTime.Format("2006-01-02 15:04:05"))
 }
 
-func DownloadFile2(url string, flags *ArgValues) {
+
+
+
+func DownloadHtmlFile(url string, flags *ArgValues) {
 	response, err := http.Get(url)
 	if err != nil {
 		fmt.Println("Error:", err)
@@ -128,9 +175,6 @@ func DownloadFile2(url string, flags *ArgValues) {
 		return
 	}
 	filename := path.Base(url)
-	// if flags.OutputFile != "" {
-	// 	filename = flags.OutputFile
-	// }
 
 	// Determine file path
 	filepath := filename
@@ -171,6 +215,8 @@ func DownloadFile2(url string, flags *ArgValues) {
 		fmt.Println("Error saving file:", err)
 		return
 	}
+
+	//Other file downloads starts here
 
 	// Convert size to appropriate unit
 	fileSizeStr := FormatSize(size)
