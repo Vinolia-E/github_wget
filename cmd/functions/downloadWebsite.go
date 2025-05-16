@@ -45,7 +45,7 @@ func DownloadHtmlFile(url string, flags *ArgValues) {
 				return
 			}
 			filepath = path.Join(flags.Path, "index.html")
-			
+
 		}
 	} else {
 		fmt.Println("File path should not be applied when mirroring a website")
