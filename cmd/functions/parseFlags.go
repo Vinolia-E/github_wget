@@ -97,11 +97,3 @@ func (input *ArgValues) ParseFlags(args []string) {
 
 	return
 }
-
-// isValidAttribute checks if an HTML tag attribute is valid for processing
-func isValidAttribute(tagName, attrKey string) bool {
-	return (tagName == "a" && attrKey == "href") ||
-		(tagName == "img" && attrKey == "src") ||
-		(tagName == "script" && attrKey == "src") ||
-		(tagName == "link" && attrKey == "href")
-}
