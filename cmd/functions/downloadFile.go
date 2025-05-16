@@ -10,6 +10,8 @@ import (
 	"time"
 )
 
+// Function that dowloads all files.
+
 func DownloadFile(url string, flags *ArgValues) {
 	response, err := http.Get(url)
 	if err != nil {
@@ -25,9 +27,7 @@ func DownloadFile(url string, flags *ArgValues) {
 		return
 	}
 	if flags.IsMirror {
-		// fmt.Println("Skipping download for mirror mode")
-		MirrorWebsite(url)
-		fmt.Println("Mirror mode  implementation trial. Debug in download.go")
+		MirrorWeb(url, flags)
 		return
 	}
 
