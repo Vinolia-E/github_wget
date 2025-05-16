@@ -12,53 +12,52 @@ import (
 	"golang.org/x/net/html"
 )
 
-func MirrorWeb(url string) {
+func MirrorWeb(url string, flags *ArgValues) {
 	response, err := http.Get(url)
 	if err != nil {
 		fmt.Println("Error getting the URL:", err)
 		return
 	}
-	
+
 	defer response.Body.Close()
-	
-	/**/
+
 	docinfo, err := html.Parse(response.Body)
 	if err != nil {
 		fmt.Println("Failed to parse HTML:", err)
 		return
 	}
-	
+
 	// Extracting links
 	resourses := []string{}
 
 	var walker func(*html.Node)
-	
+
 	walker = func(n *html.Node) {
 		if n.Type == html.ElementNode {
 			for _, attr := range n.Attr {
 				if (n.Data == "a" || n.Data == "link" || n.Data == "img") && (attr.Key == "href" || attr.Key == "src") {
 					resourse := n.Data + " " + attr.Key + " " + attr.Val
 					exist := false
-					
+
 					for _, rs := range resourses {
 						if rs == resourse {
 							exist = true
 							break
 						}
 					}
-					
+
 					if !exist {
 						resourses = append(resourses, resourse)
 					}
 				}
 			}
 		}
-		
+
 		for c := n.FirstChild; c != nil; c = c.NextSibling {
 			walker(c)
 		}
 	}
-	
+
 	filepaths := []string{}
 	subfiles := ""
 
@@ -97,11 +96,8 @@ func MirrorWeb(url string) {
 	}
 
 	for _, resource := range resourses {
-	
-
-		if !strings.HasSuffix(resource, ".css") && !strings.HasPrefix(resource, "img") {//!strings.HasSuffix(resource, ".jpg") && !strings.HasSuffix(resource, ".png") && !strings.HasSuffix(resource, ".jpeg") || strings.Contains(resource, "%") {
+		if !strings.HasSuffix(resource, ".css") && !strings.HasPrefix(resource, "img") { //!strings.HasSuffix(resource, ".jpg") && !strings.HasSuffix(resource, ".png") && !strings.HasSuffix(resource, ".jpeg") || strings.Contains(resource, "%") {
 			continue
-		
 		} else {
 			fmt.Println("Resource: ", resource)
 
@@ -126,29 +122,25 @@ func MirrorWeb(url string) {
 			defer output.Close()
 
 			// Copy data from response to file
-		data, err := io.Copy(output, resp.Body)
-		if err != nil {
-			fmt.Println("Error saving file:", err)
-			return
+			data, err := io.Copy(output, resp.Body)
+			if err != nil {
+				fmt.Println("Error saving file:", err)
+				return
+			}
+
+			// Extract file name for each image and css
+
+			// fmt.Println("filePaths: ", filepaths)
+			fmt.Println("subfiles: ", subfiles)
+			// fmt.Println("Data: ", data)
+			fileSizeStr := FormatSize(data)
+			fmt.Printf("content size: %s\n", fileSizeStr)
+			fmt.Println("saving file to:", filepath)
 		}
-
-		// Extract file name for each image and css
-
-		// fmt.Println("filePaths: ", filepaths)
-		fmt.Println("subfiles: ", subfiles)
-		// fmt.Println("Data: ", data)
-		fileSizeStr := FormatSize(data)
-		fmt.Printf("content size: %s\n", fileSizeStr)
-	fmt.Println("saving file to:", filepath)
-		}	
 	}
+	DownloadHtmlFile(url, flags)
 
 	fileSizeStr := FormatSize(data)
-
-	/*
-
-	 */
-
 	fmt.Printf("content size: %s\n", fileSizeStr)
 	fmt.Println("saving file to:", filepath)
 	fmt.Printf("Downloaded %s\n", url)
@@ -156,9 +148,6 @@ func MirrorWeb(url string) {
 	endTime := time.Now()
 	fmt.Printf("finished at %s\n", endTime.Format("2006-01-02 15:04:05"))
 }
-
-
-
 
 func DownloadHtmlFile(url string, flags *ArgValues) {
 	response, err := http.Get(url)
@@ -215,8 +204,6 @@ func DownloadHtmlFile(url string, flags *ArgValues) {
 		fmt.Println("Error saving file:", err)
 		return
 	}
-
-	//Other file downloads starts here
 
 	// Convert size to appropriate unit
 	fileSizeStr := FormatSize(size)
