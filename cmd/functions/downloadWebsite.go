@@ -10,9 +10,8 @@ import (
 	"time"
 )
 
-// Function that dowloads all files.
-
-func DownloadFile(url string, flags *ArgValues) {
+// Function that downloads the html file.
+func DownloadHtmlFile(url string, flags *ArgValues) {
 	response, err := http.Get(url)
 	if err != nil {
 		fmt.Println("Error:", err)
@@ -26,19 +25,12 @@ func DownloadFile(url string, flags *ArgValues) {
 		fmt.Println("Download failed: Received status", response.Status)
 		return
 	}
-	if flags.IsMirror {
-		MirrorWeb(url, flags)
-		return
-	}
-
 	filename := path.Base(url)
-	if flags.OutputFile != "" {
-		filename = flags.OutputFile
-	}
 
 	// Determine file path
 	filepath := filename
-	if flags.Path != "" {
+	if flags.Path == "" {
+		flags.Path = filename
 		if strings.HasPrefix(flags.Path, "~/") {
 			homeDir, err := os.UserHomeDir()
 			if err != nil {
@@ -52,8 +44,12 @@ func DownloadFile(url string, flags *ArgValues) {
 				fmt.Println("Error creating directory:", err)
 				return
 			}
-			filepath = path.Join(flags.Path, filename)
+			filepath = path.Join(flags.Path, "index.html")
+
 		}
+	} else {
+		fmt.Println("File path should not be applied when mirroring a website")
+		return
 	}
 
 	// Create the output file
