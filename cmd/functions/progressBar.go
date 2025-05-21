@@ -1,7 +1,9 @@
 package functions
 
 import (
+	"fmt"
 	"io"
+	"strings"
 	"time"
 )
 
@@ -53,4 +55,59 @@ func (pr *ProgressReader) Read(p []byte) (int, error) {
 	}
 
 	return n, err
+}
+
+// DisplayProgress renders a textual progress bar and download metrics.
+func DisplayProgress(bytesRead, totalSize int64, speed float64, timeRemaining time.Duration) {
+	// Calculate percentage
+	percentage := float64(100)
+	if totalSize > 0 {
+		percentage = float64(bytesRead) * 100 / float64(totalSize)
+	}
+
+	// Format sizes
+	var readSize, totalSizeStr string
+	if bytesRead < 1024*1024 {
+		readSize = fmt.Sprintf("%.2f KiB", float64(bytesRead)/1024)
+	} else {
+		readSize = fmt.Sprintf("%.2f MiB", float64(bytesRead)/(1024*1024))
+	}
+
+	if totalSize < 1024*1024 {
+		totalSizeStr = fmt.Sprintf("%.2f KiB", float64(totalSize)/1024)
+	} else {
+		totalSizeStr = fmt.Sprintf("%.2f MiB", float64(totalSize)/(1024*1024))
+	}
+
+	// Format speed
+	var speedStr string
+	if speed < 1024*1024 {
+		speedStr = fmt.Sprintf("%.2f KiB/s", speed/1024)
+	} else {
+		speedStr = fmt.Sprintf("%.2f MiB/s", speed/(1024*1024))
+	}
+
+	// Format time remaining
+	var timeStr string
+	if timeRemaining > time.Hour {
+		timeStr = fmt.Sprintf("%dh%dm", int(timeRemaining.Hours()), int(timeRemaining.Minutes())%60)
+	} else if timeRemaining > time.Minute {
+		timeStr = fmt.Sprintf("%dm%ds", int(timeRemaining.Minutes()), int(timeRemaining.Seconds())%60)
+	} else {
+		timeStr = fmt.Sprintf("%ds", int(timeRemaining.Seconds()))
+	}
+
+	// Create progress bar (50 characters wide)
+	width := 50
+	completed := int(float64(width) * percentage / 100)
+	bar := strings.Repeat("=", completed) + strings.Repeat(" ", width-completed)
+
+	// Clear the current line and print the progress
+	fmt.Printf("\r %s / %s [%s] %.2f%% %s %s",
+		readSize, totalSizeStr, bar, percentage, speedStr, timeStr)
+
+	// If download is complete, add a newline
+	if bytesRead >= totalSize {
+		fmt.Println()
+	}
 }
