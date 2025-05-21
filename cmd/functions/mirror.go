@@ -2,7 +2,6 @@ package functions
 
 import (
 	"fmt"
-	"io"
 	"net/http"
 	"os"
 	"path"
@@ -90,8 +89,15 @@ func MirrorWeb(url string, flags *ArgValues) {
 	}
 	defer output.Close()
 
-	// Copy data from response to file
-	data, err := io.Copy(output, response.Body)
+	// Get content size from header if available
+	contentLength := response.ContentLength
+
+	// Convert size to appropriate unit and display
+	fileSizeStr := FormatSize(contentLength)
+	fmt.Printf("content size: %d [%s]\n", contentLength, fileSizeStr)
+
+	// Download with progress bar
+	data, err := DownloadWithProgress(response.Body, output, contentLength)
 	if err != nil {
 		fmt.Println("Error saving file:", err)
 		return
@@ -123,22 +129,26 @@ func MirrorWeb(url string, flags *ArgValues) {
 			}
 			defer output.Close()
 
-			// Copy data from response to file
-			data, err := io.Copy(output, resp.Body)
+			// Get content size from header if available
+			contentLength := resp.ContentLength
+
+			// Convert size to appropriate unit and display
+			fmt.Println("subfiles: ", subfiles)
+			resourceSizeStr := FormatSize(contentLength)
+			fmt.Printf("content size: %d [%s]\n", contentLength, resourceSizeStr)
+			fmt.Println("saving file to:", filepath)
+
+			// Download with progress bar
+			data, err = DownloadWithProgress(resp.Body, output, contentLength)
 			if err != nil {
 				fmt.Println("Error saving file:", err)
 				return
 			}
-			fmt.Println("subfiles: ", subfiles)
-			// fmt.Println("Data: ", data)
-			fileSizeStr := FormatSize(data)
-			fmt.Printf("content size: %s\n", fileSizeStr)
-			fmt.Println("saving file to:", filepath)
 		}
 	}
 	DownloadHtmlFile(url, flags)
 
-	fileSizeStr := FormatSize(data)
+	fileSizeStr = FormatSize(data)
 	fmt.Printf("content size: %s\n", fileSizeStr)
 	fmt.Println("saving file to:", filepath)
 	fmt.Printf("Downloaded %s\n", url)
