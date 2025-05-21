@@ -111,3 +111,9 @@ func DisplayProgress(bytesRead, totalSize int64, speed float64, timeRemaining ti
 		fmt.Println()
 	}
 }
+
+// DownloadWithProgress copies data from reader to writer while displaying progress.
+func DownloadWithProgress(reader io.Reader, writer io.Writer, totalSize int64) (int64, error) {
+	progressReader := NewProgressReader(reader, totalSize, DisplayProgress)
+	return io.Copy(writer, progressReader)
+}
