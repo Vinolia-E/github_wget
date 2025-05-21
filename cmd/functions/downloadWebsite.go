@@ -2,7 +2,6 @@ package functions
 
 import (
 	"fmt"
-	"io"
 	"net/http"
 	"os"
 	"path"
@@ -52,6 +51,14 @@ func DownloadHtmlFile(url string, flags *ArgValues) {
 		return
 	}
 
+	// Get content size from header if available
+	contentLength := response.ContentLength
+
+	// Convert size to appropriate unit and display
+	fileSizeStr := FormatSize(contentLength)
+	fmt.Printf("content size: %d [%s]\n", contentLength, fileSizeStr)
+	fmt.Println("saving file to:", filepath)
+
 	// Create the output file
 	outFile, err := os.Create(filepath)
 	if err != nil {
@@ -60,18 +67,12 @@ func DownloadHtmlFile(url string, flags *ArgValues) {
 	}
 	defer outFile.Close()
 
-	// Copy data from response to file
-	size, err := io.Copy(outFile, response.Body)
+	// Download with progress bar
+	_, err = DownloadWithProgress(response.Body, outFile, contentLength)
 	if err != nil {
 		fmt.Println("Error saving file:", err)
 		return
 	}
-
-	// Convert size to appropriate unit
-	fileSizeStr := FormatSize(size)
-
-	fmt.Printf("content size: %s\n", fileSizeStr)
-	fmt.Println("saving file to:", filepath)
 	fmt.Printf("Downloaded %s\n", url)
 
 	// Print finish time
