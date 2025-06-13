@@ -18,6 +18,11 @@ func main() {
 	flags := &functions.ArgValues{}
 	flags.ParseFlags(args)
 
+	if (flags.Reject || flags.Exclude || flags.ConvertLinks )&& !flags.IsMirror {
+		fmt.Println("Error: --reject, --exclude, and --convert-links can only be used with --mirror flag")
+		return
+	}
+
 	if !flags.Background{
 		// Print start time on the console if not in background mode
 		startTime := time.Now()
