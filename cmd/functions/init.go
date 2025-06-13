@@ -11,6 +11,11 @@ type ArgValues struct {
 	RateLimit string
 	HasFlag bool
 	ConvertLinks bool
+	// ConvertedLinks []string
 	RejectFlag string
 	ExcludeFlag string
+	Reject bool
+	// Rejected []string
+	// Excluded []string
+	Exclude bool
 }
