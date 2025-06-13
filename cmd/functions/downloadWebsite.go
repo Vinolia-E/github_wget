@@ -70,7 +70,7 @@ func DownloadHtmlFile(url string, flags *ArgValues) {
 	// Convert size to appropriate unit
 	fileSizeStr := FormatSize(size)
 
-	fmt.Printf("content size: %s\n", fileSizeStr)
+	fmt.Printf("content size: %s [%s]\n", size, fileSizeStr)
 	fmt.Println("saving file to:", filepath)
 	fmt.Printf("Downloaded %s\n", url)
 

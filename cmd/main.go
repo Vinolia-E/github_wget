@@ -15,14 +15,16 @@ func main() {
 		return
 	}
 	args := os.Args[1:]
-
-	// Print start time
-	startTime := time.Now()
-	fmt.Printf("start at %s\n", startTime.Format("2006-01-02 15:04:05"))
-	fmt.Print("sending request, awaiting response... ")
-
 	flags := &functions.ArgValues{}
 	flags.ParseFlags(args)
+
+	if !flags.Background{
+		// Print start time on the console if not in background mode
+		startTime := time.Now()
+		fmt.Printf("start at %s\n", startTime.Format("2006-01-02 15:04:05"))
+		fmt.Print("sending request, awaiting response... ")
+	}
+
 
 	if flags.URL == nil && flags.InputFile == "" {
 		fmt.Println("Error: No URL provided")
@@ -37,6 +39,9 @@ func main() {
 	// Handle background mode
 	if flags.Background {
 		output := functions.BackgroundDownload()
+		startTime := time.Now()
+		fmt.Printf("start at %s\n", startTime.Format("2006-01-02 15:04:05"))
+		fmt.Print("sending request, awaiting response... ")
 		if output != nil {
 			defer output.Close()
 		}
