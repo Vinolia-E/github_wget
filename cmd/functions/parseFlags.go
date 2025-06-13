@@ -34,15 +34,16 @@ func (input *ArgValues) ParseFlags(args []string) {
 			mirrorMode = true
 		} else if strings.HasPrefix(arg, "--convert-links") {
 			if !mirrorMode {
-				fmt.Println("error: --convert-links can only be used with --mirror")
+				fmt.Println("error: --convert-links can only be used with --mirror flag")
 				return
 			}
 			input.ConvertLinks = true
 		} else if strings.HasPrefix(arg, "-R=") || strings.HasPrefix(arg, "--reject=") {
 			if !mirrorMode {
-				fmt.Println("error: --reject can only be used with --mirror")
+				fmt.Println("error: --reject can only be used with --mirror flag")
 				return
 			}
+			input.Reject = true
 
 			if strings.HasPrefix(arg, "-R=") {
 				input.RejectFlag = arg[len("-R="):]
@@ -51,9 +52,10 @@ func (input *ArgValues) ParseFlags(args []string) {
 			}
 		} else if strings.HasPrefix(arg, "-X=") || strings.HasPrefix(arg, "--exclude=") {
 			if !mirrorMode {
-				fmt.Println("error: --exclude can only be used with --mirror")
+				fmt.Println("error: --exclude can only be used with --mirror flag")
 				return
 			}
+			input.Exclude = true
 			if strings.HasPrefix(arg, "-X=") {
 				input.ExcludeFlag = arg[len("-X="):]
 			} else {
