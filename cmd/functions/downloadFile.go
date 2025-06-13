@@ -80,5 +80,5 @@ func DownloadFile(url string, flags *ArgValues) {
 
 	// Print finish time
 	endTime := time.Now()
-	fmt.Printf("finished at %s\n", endTime.Format("2006-01-02 15:04:05"))
+	fmt.Printf("finished at %s\n\n", endTime.Format("2006-01-02 15:04:05"))
 }
