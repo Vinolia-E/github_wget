@@ -12,7 +12,7 @@ import (
 
 // Function that dowloads all files.
 
-func DownloadFile(url string, flags *ArgValues) {
+func DownloadFile(url string, args *ArgValues) {
 	response, err := http.Get(url)
 	if err != nil {
 		fmt.Println("Error:", err)
@@ -26,33 +26,33 @@ func DownloadFile(url string, flags *ArgValues) {
 		fmt.Println("Download failed: Received status", response.Status)
 		return
 	}
-	if flags.IsMirror {
-		MirrorWeb(url, flags)
+	if args.IsMirror {
+		MirrorWeb(url, args)
 		return
 	}
 
 	filename := path.Base(url)
-	if flags.OutputFile != "" {
-		filename = flags.OutputFile
+	if args.OutputFile != "" {
+		filename = args.OutputFile
 	}
 
 	// Determine file path
 	filepath := filename
-	if flags.Path != "" {
-		if strings.HasPrefix(flags.Path, "~/") {
+	if args.Path != "" {
+		if strings.HasPrefix(args.Path, "~/") {
 			homeDir, err := os.UserHomeDir()
 			if err != nil {
 				fmt.Println("Error getting home directory:", err)
 				return
 			}
-			filepath = path.Join(homeDir, flags.Path[2:], filename)
+			filepath = path.Join(homeDir, args.Path[2:], filename)
 		} else {
-			err := os.MkdirAll(flags.Path, 0o777)
+			err := os.MkdirAll(args.Path, 0o777)
 			if err != nil {
 				fmt.Println("Error creating directory:", err)
 				return
 			}
-			filepath = path.Join(flags.Path, filename)
+			filepath = path.Join(args.Path, filename)
 		}
 	}
 
