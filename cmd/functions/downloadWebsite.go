@@ -10,8 +10,9 @@ import (
 	"time"
 )
 
-// Function that downloads the html file.
-func DownloadHtmlFile(url string, flags *ArgValues) {
+// DownloadHtmlFile downloads the HTML file from the specified URL and saves it to a file.
+// It takes the URL to download and a pointer to ArgValues containing command-line flags and options.
+func DownloadHtmlFile(url string, args *ArgValues) {
 	response, err := http.Get(url)
 	if err != nil {
 		fmt.Println("Error:", err)
@@ -29,22 +30,22 @@ func DownloadHtmlFile(url string, flags *ArgValues) {
 
 	// Determine file path
 	filepath := filename
-	if flags.Path == "" {
-		flags.Path = filename
-		if strings.HasPrefix(flags.Path, "~/") {
+	if args.Path == "" {
+		args.Path = filename
+		if strings.HasPrefix(args.Path, "~/") {
 			homeDir, err := os.UserHomeDir()
 			if err != nil {
 				fmt.Println("Error getting home directory:", err)
 				return
 			}
-			filepath = path.Join(homeDir, flags.Path[2:], filename)
+			filepath = path.Join(homeDir, args.Path[2:], filename)
 		} else {
-			err := os.MkdirAll(flags.Path, 0o777)
+			err := os.MkdirAll(args.Path, 0o777)
 			if err != nil {
 				fmt.Println("Error creating directory:", err)
 				return
 			}
-			filepath = path.Join(flags.Path, "index.html")
+			filepath = path.Join(args.Path, "index.html")
 
 		}
 	} else {
