@@ -12,6 +12,17 @@ import (
 
 // Function that dowloads all files.
 
+// DownloadFile downloads a file from the specified URL and saves it to disk.
+// The output location and filename can be customized using the provided ArgValues.
+// If the IsMirror flag is set in args, the function delegates to MirrorWeb for mirroring.
+// The function handles creating necessary directories, expanding the home directory (~),
+// and prints status messages about the download progress and result.
+//
+// Parameters:
+//   - url: The URL of the file to download.
+//   - args: Pointer to ArgValues struct containing options such as output path, filename, and mirror mode.
+//
+// The function prints errors and status information to standard output.
 func DownloadFile(url string, args *ArgValues) {
 	response, err := http.Get(url)
 	if err != nil {
