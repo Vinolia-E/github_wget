@@ -40,9 +40,18 @@ func MirrorWeb(url string, flags *ArgValues) {
 				if (n.Data == "a" || n.Data == "link" || n.Data == "img") && (attr.Key == "href" || attr.Key == "src") {
 					resourse := n.Data + " " + attr.Key + " " + attr.Val
 					if flags.RejectFlag != "" && strings.Contains(resourse, flags.RejectFlag) {
+						flags.Reject = true
 						continue
 					} else if flags.ExcludeFlag != "" && strings.Contains(resourse, flags.ExcludeFlag) {
+						flags.Exclude = true
 						continue
+					} else if flags.ConvertedLink != "" && strings.HasPrefix(resourse, "http") {
+						fmt.Println("Converting link:", resourse)
+						flags.ConvertLinks = true
+						// Convert absolute links to relative links
+
+						resourse = strings.Replace(resourse, url, "", 1)
+
 					}
 					exist := false
 
