@@ -39,6 +39,11 @@ func MirrorWeb(url string, flags *ArgValues) {
 			for _, attr := range n.Attr {
 				if (n.Data == "a" || n.Data == "link" || n.Data == "img") && (attr.Key == "href" || attr.Key == "src") {
 					resourse := n.Data + " " + attr.Key + " " + attr.Val
+					if flags.RejectFlag != "" && strings.Contains(resourse, flags.RejectFlag) {
+						continue
+					} else if flags.ExcludeFlag != "" && strings.Contains(resourse, flags.ExcludeFlag) {
+						continue
+					}
 					exist := false
 
 					for _, rs := range resourses {
