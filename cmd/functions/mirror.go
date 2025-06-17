@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"path"
 	"strings"
@@ -63,6 +64,7 @@ func MirrorWeb(url string, flags *ArgValues) {
 					}
 
 					if !exist {
+						// fmt.Println("Found resource for debug purpose:", resourse)
 						resourses = append(resourses, resourse)
 					}
 				}
@@ -112,15 +114,22 @@ func MirrorWeb(url string, flags *ArgValues) {
 	}
 
 	for _, resource := range resourses {
+
+		getLink := strings.Split(resource, " ")
+		resourceURL := getLink[2]
+		// absoluteURL := resolveURL(url, getLink[2])
+		absoluteURL := resolveURL(url, resourceURL)
+
 		if !strings.HasSuffix(resource, ".css") && !strings.HasPrefix(resource, "img") {
 			continue
-		} else {
+		} else if strings.HasPrefix(resource, "http") {
 			fmt.Println("Resource: ", resource)
 
-			getLink := strings.Split(resource, " ")
-			resp, err := http.Get(getLink[2])
+			// getLink := strings.Split(resource, " ")
+			// absoluteURL := resolveURL(url, getLink[2])
+			resp, err := http.Get(absoluteURL)
 			if err != nil {
-				fmt.Println("Error getting the URL:", err)
+				fmt.Println("Error getting the URL absolut URL:", err)
 				return
 			}
 
@@ -148,6 +157,35 @@ func MirrorWeb(url string, flags *ArgValues) {
 			fileSizeStr := FormatSize(data)
 			fmt.Printf("content size: %s\n", fileSizeStr)
 			fmt.Println("saving file to:", filepath)
+		} else {
+			fmt.Println("Relative resource here to handle:", resource)
+
+			resp, err := http.Get(absoluteURL)
+			if err != nil {
+				fmt.Println("Error getting the URL absolut URL:", err)
+				return
+			}
+
+			defer resp.Body.Close()
+			
+			// Save the file using the resource's path
+			localPath := path.Join(foldername, resourceURL)
+			// Make sure the directory exists
+			os.MkdirAll(path.Dir(localPath), 0o755)
+
+			outFile, err := os.Create(localPath)
+			if err != nil {
+				fmt.Println("Error creating file:", err)
+				continue
+			}
+			defer outFile.Close()
+
+			_, err = io.Copy(outFile, resp.Body)
+			if err != nil {
+				fmt.Println("Error saving file:", err)
+				continue
+			}
+			fmt.Println("Saved:", localPath)
 		}
 	}
 	DownloadHtmlFile(url, flags)
@@ -159,4 +197,21 @@ func MirrorWeb(url string, flags *ArgValues) {
 	// Print finish time
 	endTime := time.Now()
 	fmt.Printf("finished at %s\n", endTime.Format("2006-01-02 15:04:05"))
+}
+
+func resolveURL(base, resource string) string {
+	u, err := url.Parse(resource)
+	if err != nil {
+		fmt.Println("Error resolving URL:", err)
+		return ""
+	}
+
+	if u.IsAbs() {
+		return resource
+	}
+	baseURL, err := url.Parse(base)
+	if err != nil {
+		return resource
+	}
+	return baseURL.ResolveReference(u).String()
 }
